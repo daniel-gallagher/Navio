@@ -252,6 +252,7 @@ class MPU9250:
 
     def WriteReg(self, reg_address, data):
         self.bus.open(self.spi_bus_number, self.spi_dev_number)
+        self.bus.max_speed_hz = 1000000
         tx = [reg_address, data]
         rx = self.bus.xfer2(tx)
         self.bus.close()
@@ -261,6 +262,7 @@ class MPU9250:
 
     def ReadReg(self, reg_address):
         self.bus.open(self.spi_bus_number, self.spi_dev_number)
+        self.bus.max_speed_hz = 1000000
         tx = [reg_address | self.__READ_FLAG, 0x00]
         rx = self.bus.xfer2(tx)
         self.bus.close()
@@ -270,6 +272,7 @@ class MPU9250:
 
     def ReadRegs(self, reg_address, length):
         self.bus.open(self.spi_bus_number, self.spi_dev_number)
+        self.bus.max_speed_hz = 1000000
         tx = [0] * (length + 1)
         tx[0] = reg_address | self.__READ_FLAG
 
@@ -482,9 +485,9 @@ class MPU9250:
 
         response = self.ReadRegs(self.__MPUREG_SELF_TEST_X, 4)
 
-        self.calib_data[0] = ((response[0] & 11100000) >> 3) | ((response[3] & 00110000) >> 4)
-        self.calib_data[1] = ((response[1] & 11100000) >> 3) | ((response[3] & 00001100) >> 2)
-        self.calib_data[2] = ((response[2] & 11100000) >> 3) | ((response[3] & 00000011))
+        self.calib_data[0] = ((response[0] & 11100000) >> 3) | ((response[3] & 0o110000) >> 4)
+        self.calib_data[1] = ((response[1] & 11100000) >> 3) | ((response[3] & 0o1100) >> 2)
+        self.calib_data[2] = ((response[2] & 11100000) >> 3) | ((response[3] & 0o11))
 
         self.set_acc_scale(temp_scale)
 
