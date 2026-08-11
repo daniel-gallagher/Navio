@@ -79,8 +79,10 @@ Raspberry Pi OS you may need to set `dtparam=spi=on` and `dtparam=i2c_arm=on` in
 ### Python setup
 
 ```
+cd Python
 python3 -m venv venv
-venv/bin/pip install -r Python/requirements.txt
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ### Running the examples
