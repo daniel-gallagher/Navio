@@ -24,7 +24,6 @@ gpsmon
 */
 
 #define _XOPEN_SOURCE 600
-#include <stropts.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <stdio.h>

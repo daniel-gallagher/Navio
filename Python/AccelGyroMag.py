@@ -37,8 +37,8 @@ navio.util.check_apm()
 imu = MPU9250()
 
 if imu.testConnection():
-    print "Connection established: True"
-else: 
+    print("Connection established: True")
+else:
     sys.exit("Connection established: False")
 
 imu.initialize()
@@ -52,17 +52,17 @@ while True:
 	# imu.read_temp()
 	# imu.read_mag()
 
-	# print "Accelerometer: ", imu.accelerometer_data
-	# print "Gyroscope:     ", imu.gyroscope_data
-	# print "Temperature:   ", imu.temperature
-	# print "Magnetometer:  ", imu.magnetometer_data
+	# print("Accelerometer: ", imu.accelerometer_data)
+	# print("Gyroscope:     ", imu.gyroscope_data)
+	# print("Temperature:   ", imu.temperature)
+	# print("Magnetometer:  ", imu.magnetometer_data)
 
 	# time.sleep(0.1)
 
 	m9a, m9g, m9m = imu.getMotion9()
 
-	print "Acc:", "{:+7.3f}".format(m9a[0]), "{:+7.3f}".format(m9a[1]), "{:+7.3f}".format(m9a[2]),
-	print " Gyr:", "{:+8.3f}".format(m9g[0]), "{:+8.3f}".format(m9g[1]), "{:+8.3f}".format(m9g[2]),
-	print " Mag:", "{:+7.3f}".format(m9m[0]), "{:+7.3f}".format(m9m[1]), "{:+7.3f}".format(m9m[2])
+	print("Acc:", "{:+7.3f}".format(m9a[0]), "{:+7.3f}".format(m9a[1]), "{:+7.3f}".format(m9a[2]), end="")
+	print(" Gyr:", "{:+8.3f}".format(m9g[0]), "{:+8.3f}".format(m9g[1]), "{:+8.3f}".format(m9g[2]), end="")
+	print(" Mag:", "{:+7.3f}".format(m9m[0]), "{:+7.3f}".format(m9m[1]), "{:+7.3f}".format(m9m[2]))
 
 	time.sleep(0.5)

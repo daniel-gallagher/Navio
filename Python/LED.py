@@ -37,38 +37,38 @@ R = 0
 G = 0
 B = 4095
 pwm.setPWM(0, 0, B)
-print "LED is yellow"
+print("LED is yellow")
 time.sleep(1)
 
 while (True):
-    for R in xrange(0, 4095, step):
+    for R in range(0, 4095, step):
         pwm.setPWM(2, 0, R)
-    print "LED is green"
+    print("LED is green")
     time.sleep(1)
 
-    for B in xrange(4095, 0, -step):
+    for B in range(4095, 0, -step):
         pwm.setPWM(0, 0, B)
-    print "LED is cyan"
-    time.sleep(1)
-    
-    for G in xrange(0, 4095, step):
-        pwm.setPWM(1, 0, G)
-    print "LED is blue"
+    print("LED is cyan")
     time.sleep(1)
 
-    for R in xrange(4095, 0, -step):
+    for G in range(0, 4095, step):
+        pwm.setPWM(1, 0, G)
+    print("LED is blue")
+    time.sleep(1)
+
+    for R in range(4095, 0, -step):
         pwm.setPWM(2, 0, R)
-    print "LED is magenta"
+    print("LED is magenta")
     time.sleep(1)
 
-    for B in xrange(0, 4095, step):
+    for B in range(0, 4095, step):
         pwm.setPWM(0, 0, B)
-    print "LED is red"
+    print("LED is red")
     time.sleep(1)
 
-    for G in xrange(4095, 0, -step):
+    for G in range(4095, 0, -step):
         pwm.setPWM(1, 0, G)
-    print "LED is yellow"
+    print("LED is yellow")
     time.sleep(1)
 
   # Change speed of continuous servo on channel O
@@ -76,5 +76,4 @@ while (True):
   # time.sleep(1)
   # pwm.setPWM(0, 0, servoMax)
   # time.sleep(1)
-
 

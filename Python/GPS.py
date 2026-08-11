@@ -1,5 +1,5 @@
 import copy
-import Queue
+import queue
 import spidev
 import math
 import struct
@@ -30,10 +30,11 @@ class U_blox_message:
 class U_blox:
 
 	def __init__(self):
-		self.mess_queue = Queue.Queue()
+		self.mess_queue = queue.Queue()
 		self.curr_mess = U_blox_message()
 		self.bus = spidev.SpiDev()
 		self.bus.open(0,0)
+		self.bus.max_speed_hz = 1000000
 		self.state=0
 		self.counter1=0
 		self.chk_a=0
@@ -105,7 +106,7 @@ class U_blox:
 				self.counter1 = 0
 				self.state = waiting_header
 				self.curr_mess.msg_length = 0
-				if((ubl.chk_a == ubl.accepted_chk_a) & (ubl.chk_b == ubl.accepted_chk_b)):
+				if((self.chk_a == self.accepted_chk_a) & (self.chk_b == self.accepted_chk_b)):
 					self.mess_queue.put(copy.deepcopy(self.curr_mess))
 					self.curr_mess.clear()
 				else:
@@ -116,7 +117,7 @@ class U_blox:
 		curr_mess = self.mess_queue.get(False)
 		if((curr_mess.msg_class  == 0x01) & (curr_mess.msg_id == 0x02)):
 			msg = NavPosllhMsg()
-			curr_values = struct.unpack("<IiiiiII", str(bytearray(curr_mess.msg_payload)))
+			curr_values = struct.unpack("<IiiiiII", bytes(curr_mess.msg_payload))
 			msg.itow = curr_values[0]
 			msg.lon = curr_values[1]
 			msg.lat = curr_values[2]
@@ -174,7 +175,7 @@ ubl = U_blox()
 for ind in range(0, 10):
 	ubl.enable_posllh()
 while(1):
-	buffer = ubl.bus.xfer2([100])
+	buffer = ubl.bus.xfer2([0])
 	for byt in buffer:
 		ubl.scan_ubx(byt)
 		if(ubl.mess_queue.empty() != True):

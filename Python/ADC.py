@@ -7,7 +7,7 @@ import navio.util
 navio.util.check_apm()
 
 def signal_handler(signal, frame):
-        print 'You pressed Ctrl+C!'
+        print('You pressed Ctrl+C!')
         sys.exit(0)
 signal.signal(signal.SIGINT, signal_handler)
 #print 'Press Ctrl+C to exit'
@@ -41,13 +41,13 @@ while 1:
 
 	# Reading all channels
 	volts = adc.readADCSingleEnded(0, gain, sps) / 1000
-	print "A0: %.4fV" % (volts),
+	print("A0: %.4fV" % (volts), end=" ")
 
 	volts = adc.readADCSingleEnded(1, gain, sps) / 1000
-	print "A1: %.4fV" % (volts),
+	print("A1: %.4fV" % (volts), end=" ")
 
 	volts = adc.readADCSingleEnded(2, gain, sps) / 1000
-	print "A2: %.4fV" % (volts),
+	print("A2: %.4fV" % (volts), end=" ")
 
 	volts = adc.readADCSingleEnded(3, gain, sps) / 1000
-	print "A3: %.4fV" % (volts)
+	print("A3: %.4fV" % (volts))

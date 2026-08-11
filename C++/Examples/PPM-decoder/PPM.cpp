@@ -6,14 +6,15 @@ twitter.com/emlidtech || www.emlid.com || info@emlid.com
 
 Application: PPM to PWM decoder for Raspberry Pi with Navio.
 
-Requres pigpio library, please install it first - http://abyz.co.uk/rpi/pigpio/
+Uses the libgpiod character-device interface (works on Raspberry Pi 5).
 To run this app navigate to the directory containing it and run following commands:
 make
 sudo ./PPM
 */
 
-#include <pigpio.h>
+#include <gpiod.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 
 #include <Navio/gpio.h>
@@ -22,9 +23,8 @@ sudo ./PPM
 
 //================================ Options =====================================
 
-unsigned int samplingRate      = 1;      // 1 microsecond (can be 1,2,4,5,10)
 unsigned int ppmInputGpio      = 4;      // PPM input on Navio's 2.54 header
-unsigned int ppmSyncLength     = 4000;   // Length of PPM sync pause
+unsigned int ppmSyncLength     = 4000;   // Length of PPM sync pause in us
 unsigned int ppmChannelsNumber = 8;      // Number of channels packed in PPM
 unsigned int servoFrequency    = 50;     // Servo control frequency
 bool verboseOutputEnabled      = true;   // Output channels values to console
@@ -37,33 +37,29 @@ float channels[8];
 //============================== PPM decoder ===================================
 
 unsigned int currentChannel = 0;
-unsigned int previousTick;
-unsigned int deltaTime;
+uint64_t previousTime = 0; // us
 
-void ppmOnEdge(int gpio, int level, uint32_t tick)
+void ppmOnEdge(uint64_t eventTime /* us */)
 {
-	if (level == 0) {	
-		deltaTime = tick - previousTick;
-		previousTick = tick;
-	
-		if (deltaTime >= ppmSyncLength) { // Sync
-			currentChannel = 0;
+    uint64_t deltaTime = eventTime - previousTime;
+    previousTime = eventTime;
 
-			// RC output
-			for (int i = 0; i < ppmChannelsNumber; i++)
-			    pwm->setPWMuS(i + 3, channels[i]); // 1st Navio RC output is 3
+    if (deltaTime >= ppmSyncLength) { // Sync
+        currentChannel = 0;
 
-			// Console output
-			if (verboseOutputEnabled) {
-				printf("\n");
-				for (int i = 0; i < ppmChannelsNumber; i++)
-					printf("%4.f ", channels[i]);
-			}
-		}
-		else
-			if (currentChannel < ppmChannelsNumber)
-				channels[currentChannel++] = deltaTime;
-	}
+        // RC output
+        for (unsigned int i = 0; i < ppmChannelsNumber; i++)
+            pwm->setPWMuS(i + 3, channels[i]); // 1st Navio RC output is 3
+
+        // Console output
+        if (verboseOutputEnabled) {
+            printf("\n");
+            for (unsigned int i = 0; i < ppmChannelsNumber; i++)
+                printf("%4.f ", channels[i]);
+        }
+    }
+    else if (currentChannel < ppmChannelsNumber)
+        channels[currentChannel++] = deltaTime;
 }
 
 //================================== Main ======================================
@@ -77,33 +73,77 @@ int main(int argc, char *argv[])
     if (check_apm()) {
         return 1;
     }
-    
+
     Pin pin(outputEnablePin);
 
     if (pin.init()) {
         pin.setMode(Pin::GpioModeOutput);
         pin.write(0); /* drive Output Enable low */
     } else {
-        fprintf(stderr, "Output Enable not set. Are you root?");
+        fprintf(stderr, "Output Enable not set. Are you root?\n");
     }
 
-	// Servo controller setup
+    // Servo controller setup
 
-	pwm = new PCA9685();
-	pwm->initialize();
-	pwm->setFrequency(servoFrequency);
+    pwm = new PCA9685();
+    pwm->initialize();
+    pwm->setFrequency(servoFrequency);
 
-	// GPIO setup
+    // PPM input setup - find the header line named GPIO<n> on any chip
 
-	gpioCfgClock(samplingRate, PI_DEFAULT_CLK_PERIPHERAL, 0); /* last parameter is deprecated now */
-	gpioInitialise();
-	gpioSetMode(4,PI_INPUT);
-	previousTick = gpioTick();
-	gpioSetAlertFunc(ppmInputGpio, ppmOnEdge);
+    char line_name[16];
+    snprintf(line_name, sizeof(line_name), "GPIO%u", ppmInputGpio);
 
-	// Infinite sleep - all action is now happening in ppmOnEdge() function
+    struct gpiod_chip *chip = NULL;
+    struct gpiod_line *line = NULL;
+    struct gpiod_chip_iter *iter = gpiod_chip_iter_new();
+    if (!iter) {
+        fprintf(stderr, "Cannot iterate gpio chips. Are you root?\n");
+        return 1;
+    }
+    struct gpiod_chip *c;
+    gpiod_foreach_chip(iter, c) {
+        line = gpiod_chip_find_line(c, line_name);
+        if (line) {
+            chip = c;
+            break;
+        }
+    }
+    if (chip) {
+        gpiod_chip_iter_free_noclose(iter);
+    } else {
+        gpiod_chip_iter_free(iter);
+        fprintf(stderr, "PPM input line %s not found\n", line_name);
+        return 1;
+    }
 
-	while(1)
-		sleep(10);
-	return 0;
+    if (gpiod_line_request_falling_edge_events(line, "ppm-decoder") < 0) {
+        perror("Cannot request falling edge events");
+        return 1;
+    }
+
+    printf("Waiting for PPM signal on GPIO%u...\n", ppmInputGpio);
+
+    // Event loop - all decoding happens in ppmOnEdge()
+
+    struct timespec timeout = { 1, 0 };
+    struct gpiod_line_event event;
+
+    while (true) {
+        int ret = gpiod_line_event_wait(line, &timeout);
+        if (ret < 0) {
+            perror("Event wait failed");
+            return 1;
+        }
+        if (ret == 0)
+            continue; // timeout, keep waiting
+        if (gpiod_line_event_read(line, &event) < 0)
+            continue;
+
+        uint64_t us = (uint64_t)event.ts.tv_sec * 1000000ULL
+                    + (uint64_t)event.ts.tv_nsec / 1000ULL;
+        ppmOnEdge(us);
+    }
+
+    return 0;
 }

@@ -4,6 +4,9 @@
 
 #include <stdint.h>
 
+struct gpiod_chip;
+struct gpiod_line;
+
 namespace Navio {
 
 /* Raspberry Pi GPIO mapping */
@@ -46,15 +49,15 @@ public:
     void    toggle();
 
 private:
-    int getRaspberryPiVersion() const;
     Pin (const Pin&);
     Pin& operator=(const Pin&);
 
-    uint8_t _pin;
-    volatile uint32_t *_gpio;
-    GpioMode _mode;
+    bool _request(GpioMode mode);
 
-    bool    _deinit();
+    uint8_t _pin;
+    GpioMode _mode;
+    struct gpiod_chip *_chip;
+    struct gpiod_line *_line;
 };
 
 }
