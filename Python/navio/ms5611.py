@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import time
 
-from smbus import SMBus
+from smbus2 import SMBus
 
 class MS5611:
 
@@ -78,17 +78,17 @@ class MS5611:
 		## The MS6511 Sensor stores 6 values in the EPROM memory that we need in order to calculate the actual temperature and pressure
 		## These values are calculated/stored at the factory when the sensor is calibrated.
 		##      I probably could have used the read word function instead of the whole block, but I wanted to keep things consistent.
-		C1 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_C1) #Pressure Sensitivity
+		C1 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_C1, 2) #Pressure Sensitivity
 		#time.sleep(0.05)
-		C2 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_C2) #Pressure Offset
+		C2 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_C2, 2) #Pressure Offset
 		#time.sleep(0.05)
-		C3 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_C3) #Temperature coefficient of pressure sensitivity
+		C3 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_C3, 2) #Temperature coefficient of pressure sensitivity
 		#time.sleep(0.05)
-		C4 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_C4) #Temperature coefficient of pressure offset
+		C4 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_C4, 2) #Temperature coefficient of pressure offset
 		#time.sleep(0.05)
-		C5 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_C5) #Reference temperature
+		C5 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_C5, 2) #Reference temperature
 		#time.sleep(0.05)
-		C6 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_C6) #Temperature coefficient of the temperature
+		C6 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_C6, 2) #Temperature coefficient of the temperature
 
 		## Again here we are converting the 2 8bit packages into a single decimal
 		self.C1 = C1[0] * 256.0 + C1[1]
@@ -107,11 +107,11 @@ class MS5611:
 		self.bus.write_byte(self.address, OSR)
 
 	def readPressure(self):
-		D1 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_ADC)
+		D1 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_ADC, 3)
 		self.D1 = D1[0] * 65536 + D1[1] * 256.0 + D1[2]
 
 	def readTemperature(self):
-		D2 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_ADC)
+		D2 = self.bus.read_i2c_block_data(self.address, self.__MS5611_RA_ADC, 3)
 		self.D2 = D2[0] * 65536 + D2[1] * 256.0 + D2[2]
 
 	def calculatePressureAndTemperature(self):
